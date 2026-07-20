@@ -1,0 +1,22 @@
+export const dashboardState = {
+  section: "projects",
+  filters: {},
+  pagination: { offset: 0, limit: 25 },
+  sorting: { field: "updated_at", direction: "desc" },
+  selectedEntity: null,
+  mapBounds: null,
+  activeRequests: {},
+  selectedRows: new Set(),
+  projectMarkers: new Map(),
+  markerClusterer: null,
+  map: null,
+  infoWindow: null,
+  collectionConfig: null,
+  collectionZones: [],
+  collectionGeometry: null,
+  collectionSelectionMode: null,
+  collectionSelectionPoints: [],
+  collectionSelectionOverlay: null,
+  collectionSelectionListener: null,
+  activeCollectionJobId: null
+};

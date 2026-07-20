@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    <!-- Legacy static assets retained for compatibility: /static/css/app.css /static/js/api.js /static/js/map.js /static/js/jobs.js /static/js/app.js -->
+    <link rel="stylesheet" href="{{ url_for('static', path='css/dashboard.css') }}">
+    <script>
+      window.ALDUOR_CONFIG = {
+        googleMapsConfigured: {{ "true" if google_maps_configured else "false" }},
+        googleMapsApiKey: "{{ google_maps_browser_api_key }}",
+        googleMapsMapId: "{{ google_maps_map_id }}"
+      };
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#dashboard-content">Skip to dashboard content</a>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ALDUOR PROJECT DISCOVERY</p>
+        <h1>Lahore Project Intelligence Dashboard</h1>
+      </div>
+      <div id="worker-indicator" class="worker-indicator" aria-live="polite">Worker: Checking...</div>
+    </header>
+
+    <nav class="top-nav" aria-label="Dashboard sections">
+      <button class="nav-tab is-active" data-section="projects" type="button">Projects</button>
+      <button class="nav-tab" data-section="developers" type="button">Developers</button>
+      <button class="nav-tab" data-section="intelligence" type="button">Intelligence</button>
+      <button class="nav-tab" data-section="captures" type="button">Social Captures</button>
+      <button class="nav-tab" data-section="jobs" type="button">Collection Jobs</button>
+      <button class="nav-tab" data-section="exports" type="button">Export</button>
+    </nav>
+
+    <main id="dashboard-content">
+      <section id="summary-cards" class="summary-grid" aria-label="Dashboard summary"></section>
+
+      <section id="projects-section" class="dashboard-section is-active">
+        <aside class="filters-panel" aria-label="Project filters">
+          <button id="toggle-filters" type="button" class="secondary mobile-only">Filters</button>
+          <form id="project-filters" class="filters-form">
+            <fieldset>
+              <legend>Project Filters</legend>
+              <label>Search <input name="q" type="search" autocomplete="off"></label>
+              <label>Zone <input name="lahore_zone" type="text"></label>
+              <label>Type <input name="project_type" type="text"></label>
+              <label>Review
+                <select name="review_status">
+                  <option value="">Any</option>
+                  <option value="unreviewed">Unreviewed</option>
+                  <option value="needs_review">Needs Review</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="excluded">Excluded</option>
+                </select>
+              </label>
+              <label>Outreach
+                <select name="outreach_status">
+                  <option value="">Any</option>
+                  <option value="not_contacted">Not Contacted</option>
+                  <option value="ready_to_contact">Ready to Contact</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="follow_up_due">Follow-up Due</option>
+                  <option value="interested">Interested</option>
+                  <option value="onboarding">Onboarding</option>
+                  <option value="onboarded">Onboarded</option>
+                </select>
+              </label>
+              <label>Developer
+                <select name="developer_assignment">
+                  <option value="">Any</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="missing">Missing</option>
+                </select>
+              </label>
+            </fieldset>
+            <div class="button-row">
+              <button type="submit" class="primary">Apply Filters</button>
+              <button type="button" id="reset-filters" class="secondary">Reset</button>
+              <button type="button" id="save-filters" class="secondary">Save locally</button>
+            </div>
+            <div id="filter-chips" class="filter-chips" aria-label="Applied filters"></div>
+          </form>
+        </aside>
+        <div class="project-workspace">
+          <section class="map-panel" aria-label="Lahore project map">
+            <div class="collection-toolbar">
+              <div class="collection-heading">
+                <strong>Discover real-estate projects</strong>
+                <span id="collection-area-status">Select an area to search.</span>
+              </div>
+              <div class="collection-controls">
+                <form id="collection-area-form" class="collection-area-form">
+                  <label for="collection-area-input" class="sr-only">Search Lahore area</label>
+                  <input id="collection-area-input" type="search" list="collection-area-options" placeholder="Search area, e.g. Gulberg" autocomplete="off">
+                  <datalist id="collection-area-options"></datalist>
+                  <button type="submit" class="secondary">Find Area</button>
+                </form>
+                <div class="button-row" aria-label="Area selection tools">
+                  <button id="use-visible-area" type="button" class="secondary" disabled>Use Visible Area</button>
+                  <label class="radius-control" for="collection-radius-km">Radius
+                    <input id="collection-radius-km" type="number" min="1" max="15" step="1" value="3" inputmode="numeric">
+                    <span>km</span>
+                  </label>
+                  <button id="draw-search-circle" type="button" class="secondary" disabled>Draw Circle</button>
+                  <button id="draw-search-rectangle" type="button" class="secondary" disabled>Draw Rectangle</button>
+                  <button id="draw-search-polygon" type="button" class="secondary" disabled>Draw Polygon</button>
+                  <button id="finish-search-polygon" type="button" class="secondary" disabled>Finish Polygon</button>
+                  <button id="clear-search-area" type="button" class="secondary" disabled>Clear</button>
+                </div>
+                <details class="project-type-picker">
+                  <summary id="collection-type-summary">Project types</summary>
+                  <div id="collection-project-types" class="collection-type-grid"></div>
+                </details>
+                <button id="start-area-search" type="button" class="primary" disabled>Start Research</button>
+              </div>
+              <div id="collection-job-status" class="collection-job-status" role="status" aria-live="polite"></div>
+              <div id="collection-research-metrics" class="collection-research-metrics" aria-live="polite" hidden></div>
+            </div>
+            <div class="map-stage">
+              <div id="map-status" class="map-status" role="status">Loading map...</div>
+              <div id="map-warning" class="map-warning" hidden></div>
+              <div id="map" class="map-canvas"><p>Google Maps is not configured unless a browser key and Map ID are present.</p></div>
+              <button id="search-map-area" type="button" class="secondary map-action">Refresh Visible Projects</button>
+            </div>
+          </section>
+          <section class="table-panel" aria-label="Projects table">
+            <div class="panel-heading">
+              <h2>Projects</h2>
+              <div class="button-row">
+                <button id="bulk-needs-review" type="button" class="secondary">Mark Needs Review</button>
+                <button id="refresh-projects" type="button" class="secondary">Refresh</button>
+              </div>
+            </div>
+            <div id="projects-loading" class="loading" hidden>Loading projects...</div>
+            <div class="table-wrap">
+              <table id="projects-table">
+                <thead>
+                  <tr>
+                    <th><span class="sr-only">Select</span></th>
+                    <th>Project</th>
+                    <th>Developer</th>
+                    <th>Lahore Zone</th>
+                    <th>Type</th>
+                    <th>Review</th>
+                    <th>Outreach</th>
+                    <th>Data</th>
+                    <th>Warnings</th>
+                    <th>Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="projects-body"></tbody>
+              </table>
+            </div>
+            <div id="project-pagination" class="pagination"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="developers-section" class="dashboard-section">
+        <div class="panel-heading"><h2>Developers</h2><button id="refresh-developers" type="button" class="secondary">Refresh</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Developer</th><th>Classification</th><th>Review</th><th>Outreach</th><th>Updated</th><th>Actions</th></tr></thead><tbody id="developers-body"></tbody></table></div>
+      </section>
+
+      <section id="intelligence-section" class="dashboard-section">
+        <div class="panel-heading"><h2>Intelligence</h2><button id="refresh-intelligence" type="button" class="secondary">Refresh</button></div>
+        <div class="subtabs"><button data-intel="classifications" class="is-active" type="button">Classifications</button><button data-intel="relationships" type="button">Relationships</button><button data-intel="duplicates" type="button">Duplicates</button></div>
+        <div id="intelligence-results" class="record-list"></div>
+      </section>
+
+      <section id="captures-section" class="dashboard-section">
+        <div class="panel-heading"><h2>Social Captures and Campaign Evidence</h2><button id="refresh-captures" type="button" class="secondary">Refresh</button></div>
+        <div class="subtabs"><button data-capture-status="unassigned" class="is-active" type="button">Unassigned</button><button data-capture-status="review_required" type="button">Review Required</button><button data-capture-status="attached" type="button">Attached</button><button data-capture-status="accepted" type="button">Accepted</button><button data-capture-status="rejected" type="button">Rejected</button><button data-capture-status="duplicate" type="button">Duplicates</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Platform</th><th>Name</th><th>Kind</th><th>Status</th><th>Source</th><th>Actions</th></tr></thead><tbody id="captures-body"></tbody></table></div>
+      </section>
+
+      <section id="jobs-section" class="dashboard-section">
+        <div class="panel-heading"><h2>Collection Jobs</h2><button id="refresh-jobs" type="button" class="secondary">Refresh</button></div>
+        <div id="worker-status-detail" class="worker-detail"></div>
+        <div class="table-wrap"><table><thead><tr><th>Job ID</th><th>Type</th><th>Status</th><th>Phase</th><th>Progress</th><th>Created</th><th>Actions</th></tr></thead><tbody id="jobs-body"></tbody></table></div>
+      </section>
+
+      <section id="exports-section" class="dashboard-section">
+        <div class="panel-heading"><h2>Export Current Intelligence</h2><button id="refresh-exports" type="button" class="secondary">Refresh History</button></div>
+        <div class="record-card refinement-card">
+          <div>
+            <h3>Clean-data refiner</h3>
+            <p>Filters noisy Places results, enriches likely projects from official sites, links only strong developer evidence, and prepares strict records with developer phone, developer email, and exact location.</p>
+            <div id="refinement-summary">Loading refinement readiness…</div>
+          </div>
+          <button id="prepare-refinement" type="button" class="primary">Prepare Clean Data</button>
+        </div>
+        <div class="export-grid">
+          <form id="export-form" class="record-card">
+            <label>Scope
+              <select name="scope">
+                <option value="refined_projects">Refined Projects (Strict Clean Data)</option>
+                <option value="current_project_view">Current Project View</option>
+                <option value="current_developer_view">Current Developer View</option>
+                <option value="all_projects">All Projects</option>
+                <option value="all_developers">All Developers</option>
+                <option value="full_intelligence">Full Intelligence</option>
+                <option value="review_queue">Review Queue</option>
+                <option value="outreach_pipeline">Outreach Pipeline</option>
+              </select>
+            </label>
+            <label>Format
+              <select name="format">
+                <option value="xlsx">Excel</option>
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+            </label>
+            <label>Filename label <input name="filename_label" type="text" maxlength="120" placeholder="Gulberg approved projects"></label>
+            <fieldset>
+              <legend>Include</legend>
+              <label><input name="include_contacts" type="checkbox" checked> Contacts</label>
+              <label><input name="include_social_profiles" type="checkbox" checked> Social Profiles</label>
+              <label><input name="include_campaign_evidence" type="checkbox" checked> Campaign Evidence</label>
+              <label><input name="include_source_evidence" type="checkbox"> Source Evidence</label>
+              <label><input name="include_relationships" type="checkbox" checked> Relationships</label>
+              <label><input name="include_duplicate_candidates" type="checkbox" checked> Duplicate Candidates</label>
+              <label><input name="include_outreach_activities" type="checkbox" checked> Outreach Activities</label>
+              <label><input name="include_collection_logs" type="checkbox"> Collection Logs</label>
+              <label><input name="include_rejected_records" type="checkbox"> Rejected Records</label>
+              <label><input name="include_excluded_records" type="checkbox"> Excluded Records</label>
+              <label><input name="include_merged_records" type="checkbox"> Merged Records</label>
+            </fieldset>
+            <div class="button-row">
+              <button id="preview-export" type="button" class="secondary">Preview Export</button>
+              <button id="create-export" type="button" class="primary" disabled>Create Export</button>
+            </div>
+          </form>
+          <section class="record-card" aria-live="polite">
+            <h3>Export Preview</h3>
+            <div id="export-preview">Choose options and preview before creating an export.</div>
+          </section>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>Export ID</th><th>Filename</th><th>Format</th><th>Scope</th><th>Status</th><th>Rows</th><th>File Size</th><th>Created</th><th>Expires</th><th>Downloads</th><th>Actions</th></tr></thead><tbody id="exports-body"></tbody></table></div>
+      </section>
+    </main>
+
+    <aside id="detail-drawer" class="detail-drawer" aria-hidden="true" aria-labelledby="drawer-title">
+      <div class="drawer-header">
+        <h2 id="drawer-title">Record Details</h2>
+        <button id="close-drawer" type="button" class="icon-button" aria-label="Close details">x</button>
+      </div>
+      <div id="drawer-content" class="drawer-content"></div>
+    </aside>
+
+    <div id="notification" class="notification" role="status" aria-live="polite"></div>
+
+    <script src="{{ url_for('static', path='vendor/markerclusterer/markerclusterer.min.js') }}"></script>
+    <script type="module" src="{{ url_for('static', path='js/dashboard.js') }}"></script>
+    {% if google_maps_configured %}
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_browser_api_key }}&libraries=maps,marker&loading=async&callback=initAlduorDashboardMap"></script>
+    {% endif %}
+  </body>
+</html>

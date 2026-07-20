@@ -1,0 +1,24 @@
+{
+  "places": [
+    {
+      "id": "place_demo_2",
+      "displayName": {"text": "Gulberg Commercial Square"},
+      "formattedAddress": "Main Boulevard Gulberg, Lahore",
+      "location": {"latitude": 31.512, "longitude": 74.35},
+      "primaryType": "point_of_interest",
+      "types": ["point_of_interest"],
+      "businessStatus": "OPERATIONAL",
+      "googleMapsUri": "https://maps.google.com/?cid=2"
+    },
+    {
+      "id": "place_demo_3",
+      "displayName": {"text": "Gulberg Residences"},
+      "formattedAddress": "MM Alam Road, Lahore",
+      "location": {"latitude": 31.507, "longitude": 74.342},
+      "primaryType": "establishment",
+      "types": ["establishment"],
+      "businessStatus": "OPERATIONAL",
+      "googleMapsUri": "https://maps.google.com/?cid=3"
+    }
+  ]
+}

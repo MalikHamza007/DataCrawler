@@ -1,0 +1,28 @@
+{
+  "places": [
+    {
+      "id": "place_demo_1",
+      "displayName": {"text": "Gulberg Heights"},
+      "formattedAddress": "Gulberg, Lahore",
+      "location": {"latitude": 31.5106, "longitude": 74.3441},
+      "primaryType": "real_estate_agency",
+      "types": ["real_estate_agency", "point_of_interest"],
+      "businessStatus": "OPERATIONAL",
+      "googleMapsUri": "https://maps.google.com/?cid=1",
+      "websiteUri": "https://gulberg-heights.example.com/",
+      "nationalPhoneNumber": "0300 1234567",
+      "internationalPhoneNumber": "+92 300 1234567"
+    },
+    {
+      "id": "place_demo_2",
+      "displayName": {"text": "Gulberg Commercial Square"},
+      "formattedAddress": "Main Boulevard Gulberg, Lahore",
+      "location": {"latitude": 31.512, "longitude": 74.35},
+      "primaryType": "point_of_interest",
+      "types": ["point_of_interest"],
+      "businessStatus": "OPERATIONAL",
+      "googleMapsUri": "https://maps.google.com/?cid=2"
+    }
+  ],
+  "nextPageToken": "NEXT_TOKEN"
+}

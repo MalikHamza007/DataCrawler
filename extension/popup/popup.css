@@ -1,0 +1,58 @@
+:root {
+  color-scheme: light;
+  --navy: #16324f;
+  --teal: #1f7a8c;
+  --border: #d8dee8;
+  --bg: #f5f7fa;
+  --text: #1f2937;
+  --muted: #667085;
+  --danger: #b42318;
+}
+* { box-sizing: border-box; }
+body {
+  width: 420px;
+  margin: 0;
+  font: 14px/1.45 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+header { padding: 14px 16px; background: var(--navy); color: white; }
+h1, h2 { margin: 0; font-size: 18px; letter-spacing: 0; }
+h2 { color: var(--navy); font-size: 15px; margin-bottom: 10px; }
+header p, .hint { color: #dbe6f0; margin: 6px 0 0; font-size: 12px; }
+main { padding: 12px; display: grid; gap: 12px; }
+section { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+dl { margin: 0; display: grid; gap: 8px; }
+dl div { display: grid; grid-template-columns: 130px 1fr; gap: 8px; }
+dt { color: var(--muted); }
+dd { margin: 0; overflow-wrap: anywhere; }
+button {
+  border: 0;
+  border-radius: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  background: var(--teal);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+button:disabled { opacity: 0.6; cursor: wait; }
+#capture-button, #save-button { width: 100%; margin-top: 12px; }
+.field-row { display: grid; grid-template-columns: 24px 95px 1fr; gap: 7px; align-items: center; margin-bottom: 8px; }
+.field-row input[type="text"], input[type="search"], select, textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 8px;
+  font: inherit;
+}
+.field-row input[type="checkbox"] { width: 16px; height: 16px; }
+.section-title { font-weight: 800; color: var(--navy); margin: 12px 0 8px; }
+.search-row { display: grid; grid-template-columns: 1fr 110px; gap: 8px; }
+.entity-results { display: grid; gap: 6px; margin-top: 8px; }
+.entity-button { background: #eaf1f6; color: var(--navy); border: 1px solid #c8d6e2; text-align: left; }
+.selected-targets { color: var(--muted); margin: 8px 0; }
+textarea { min-height: 64px; resize: vertical; }
+#message { margin: 0; min-height: 20px; color: var(--danger); }
+footer { padding: 0 12px 12px; }
+a { color: var(--navy); }

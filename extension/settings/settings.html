@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Capture to Alduor Settings</title>
+    <link rel="stylesheet" href="settings.css">
+  </head>
+  <body>
+    <main>
+      <h1>Capture to Alduor Settings</h1>
+      <p class="notice">The local extension token protects the Alduor capture endpoint. It is not a Facebook or social-platform credential.</p>
+      <p class="notice">Capture to Alduor reads visible public business information only after you click Capture Current Page. It does not collect passwords, cookies, private messages, browsing history, friend lists, follower lists or hidden account information.</p>
+      <label>Backend URL <input id="backend-url" type="url" value="http://127.0.0.1:8000"></label>
+      <label>Extension API token <input id="extension-token" type="password" value="local-token"></label>
+      <div class="actions">
+        <button id="save" type="button">Save settings</button>
+        <button id="test" type="button">Test Connection</button>
+        <button id="clear" type="button" class="secondary">Clear settings</button>
+      </div>
+      <p>Extension version: <span id="version"></span></p>
+      <p id="message" role="status"></p>
+    </main>
+    <script type="module" src="settings.js"></script>
+  </body>
+</html>

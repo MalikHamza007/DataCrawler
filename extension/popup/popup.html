@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Capture to Alduor</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <header>
+      <h1>Capture to Alduor</h1>
+      <p>Reads visible public business information only after you click Capture Current Page.</p>
+    </header>
+    <main>
+      <section class="status-panel">
+        <dl>
+          <div><dt>Current page</dt><dd id="page-url">Checking...</dd></div>
+          <div><dt>Detected platform</dt><dd id="platform">Unknown</dd></div>
+          <div><dt>Detected page type</dt><dd id="page-kind">Unknown</dd></div>
+          <div><dt>Backend</dt><dd id="backend-status">Not checked</dd></div>
+        </dl>
+        <button id="capture-button" type="button">Capture Current Page</button>
+      </section>
+      <section id="preview" class="preview" hidden></section>
+      <section class="target-panel" id="target-panel" hidden>
+        <h2>Target Alduor record</h2>
+        <div class="search-row">
+          <input id="entity-query" type="search" placeholder="Search projects or developers">
+          <select id="entity-type">
+            <option value="all">All</option>
+            <option value="project">Projects</option>
+            <option value="developer">Developers</option>
+          </select>
+        </div>
+        <div id="entity-results" class="entity-results"></div>
+        <p id="selected-targets" class="selected-targets">No target selected. Capture will be saved to the inbox.</p>
+        <label class="note-label">Operator note <textarea id="operator-note"></textarea></label>
+        <button id="save-button" type="button">Save to Alduor</button>
+      </section>
+      <p id="message" role="status"></p>
+    </main>
+    <footer>
+      <a href="../settings/settings.html" target="_blank">Settings</a>
+    </footer>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

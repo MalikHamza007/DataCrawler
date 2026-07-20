@@ -1,0 +1,14 @@
+{
+  "places": [
+    {
+      "id": "place_mall_1",
+      "displayName": {"text": "Demo Lahore Mall"},
+      "formattedAddress": "Gulberg, Lahore",
+      "location": {"latitude": 31.515, "longitude": 74.345},
+      "primaryType": "shopping_mall",
+      "types": ["shopping_mall", "point_of_interest"],
+      "businessStatus": "OPERATIONAL",
+      "googleMapsUri": "https://maps.google.com/?cid=4"
+    }
+  ]
+}
