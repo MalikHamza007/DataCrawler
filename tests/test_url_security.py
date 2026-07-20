@@ -24,6 +24,30 @@ def test_dns_rejects_private_result():
         validate_url_dns("https://example.com", resolver)
 
 
+def test_dns_retries_on_transient_failure_then_succeeds():
+    calls = {"count": 0}
+
+    def flaky_resolver(*args, **kwargs):
+        calls["count"] += 1
+        if calls["count"] < 3:
+            raise OSError("temporary DNS failure")
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))]
+
+    sleeps = []
+    result = validate_url_dns("https://example.com", flaky_resolver, sleeper=sleeps.append)
+    assert result == "https://example.com/"
+    assert calls["count"] == 3
+    assert len(sleeps) == 2
+
+
+def test_dns_raises_after_exhausting_retries():
+    def always_fails(*args, **kwargs):
+        raise OSError("permanent DNS failure")
+
+    with pytest.raises(UnsafeURLError):
+        validate_url_dns("https://example.com", always_fails, sleeper=lambda _: None)
+
+
 def test_canonicalization_and_same_site_policy():
     assert canonicalize_url("HTTPS://Example.COM:443/a?utm_source=x&b=2&a=1#part") == "https://example.com/a?a=1&b=2"
     assert is_same_site("https://example.com/projects", "https://example.com/")

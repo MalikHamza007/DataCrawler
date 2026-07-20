@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ipaddress
 import socket
+import time
 from collections.abc import Callable
 from urllib.parse import urlsplit
 
@@ -11,7 +12,15 @@ from app.collectors.websites.canonicalization import canonicalize_url
 from app.collectors.websites.exceptions import UnsafeURLError
 
 Resolver = Callable[..., list[tuple]]
+Sleeper = Callable[[float], None]
 _TLD_EXTRACT = tldextract.TLDExtract(cache_dir=None, suffix_list_urls=())
+
+# DNS lookups can fail transiently (slow resolver, brief network blip) even for a
+# perfectly valid, safe hostname. Without a retry, one bad lookup permanently kills
+# the crawl for that entire site (see crawler.py seed-fetch handling). These control
+# how many extra attempts we give a hostname before treating it as genuinely unsafe.
+DNS_MAX_ATTEMPTS = 3
+DNS_RETRY_DELAY_SECONDS = 1.0
 
 
 def _is_unsafe_ip(value: str) -> bool:
@@ -48,13 +57,27 @@ def validate_url_syntax(url: str) -> str:
         raise UnsafeURLError("Invalid URL") from exc
 
 
-def validate_url_dns(url: str, resolver: Resolver = socket.getaddrinfo) -> str:
+def validate_url_dns(
+    url: str,
+    resolver: Resolver = socket.getaddrinfo,
+    *,
+    max_attempts: int = DNS_MAX_ATTEMPTS,
+    retry_delay_seconds: float = DNS_RETRY_DELAY_SECONDS,
+    sleeper: Sleeper = time.sleep,
+) -> str:
     canonical = validate_url_syntax(url)
     host = urlsplit(canonical).hostname or ""
-    try:
-        results = resolver(host, None, type=socket.SOCK_STREAM)
-    except OSError as exc:
-        raise UnsafeURLError("Hostname could not be resolved safely") from exc
+    last_error: OSError | None = None
+    for attempt in range(max_attempts):
+        try:
+            results = resolver(host, None, type=socket.SOCK_STREAM)
+            break
+        except OSError as exc:
+            last_error = exc
+            if attempt < max_attempts - 1:
+                sleeper(retry_delay_seconds * (2**attempt))
+    else:
+        raise UnsafeURLError("Hostname could not be resolved safely") from last_error
     addresses = {item[4][0] for item in results}
     if not addresses or any(_is_unsafe_ip(address) for address in addresses):
         raise UnsafeURLError("Hostname resolves to a private or non-public address")

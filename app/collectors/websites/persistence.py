@@ -66,15 +66,35 @@ def persist_page_facts(db: Session, *, crawl: WebsiteCrawl, page: ParsedPage, ex
     if developer:
         for project in projects:
             relation = _relationship(page.text)
+            # If this crawl was launched FOR this exact project (project.official_website_url
+            # is what we're crawling), we already know the answer with high confidence -
+            # we don't need the page to literally say "developed by X". Text-mined phrases
+            # are only needed (and only trusted as "candidate") for OTHER projects the page
+            # happens to mention alongside the seed project.
+            is_seed_project = crawl.project_id is not None and project.id == crawl.project_id
+            if not relation and not is_seed_project:
+                continue
             if relation:
-                evidence_fact = ExtractedFact("developer_relationship", f"{project.name} -> {developer.name}", relation)
-                before = counts["evidence_records_created"]
-                counts["evidence_records_created"] += _evidence(db, crawl, developer_id=developer.id, project_id=project.id, fact=evidence_fact, page=page, excerpt_limit=excerpt_limit)
-                evidence = db.scalar(select(SourceEvidence).where(SourceEvidence.collection_job_id == crawl.collection_job_id, SourceEvidence.project_id == project.id, SourceEvidence.developer_id == developer.id, SourceEvidence.field_name == "developer_relationship", SourceEvidence.source_url == page.url))
-                exists = db.scalar(select(ProjectDeveloperRelationship).where(ProjectDeveloperRelationship.project_id == project.id, ProjectDeveloperRelationship.developer_id == developer.id, ProjectDeveloperRelationship.relationship_type == "developer", ProjectDeveloperRelationship.source_url == page.url))
-                if not exists:
-                    db.add(ProjectDeveloperRelationship(project_id=project.id, developer_id=developer.id, relationship_type="developer", status="candidate", source_evidence=evidence, source_url=page.url, evidence_text=relation[:excerpt_limit]))
-                    counts["relationship_candidates_created"] += 1
+                evidence_text, signal = relation, "explicit_developer_relationship"
+            else:
+                evidence_text = (f"Crawl was seeded from project '{project.name}''s official website "
+                                  f"({crawl.canonical_seed_url}), which resolved to developer '{developer.name}'.")
+                signal = "seed_project_website_match"
+            evidence_fact = ExtractedFact("developer_relationship", f"{project.name} -> {developer.name}", evidence_text, metadata={"signal": signal})
+            counts["evidence_records_created"] += _evidence(db, crawl, developer_id=developer.id, project_id=project.id, fact=evidence_fact, page=page, excerpt_limit=excerpt_limit)
+            evidence = db.scalar(select(SourceEvidence).where(SourceEvidence.collection_job_id == crawl.collection_job_id, SourceEvidence.project_id == project.id, SourceEvidence.developer_id == developer.id, SourceEvidence.field_name == "developer_relationship", SourceEvidence.source_url == page.url))
+            existing_rel = db.scalar(select(ProjectDeveloperRelationship).where(ProjectDeveloperRelationship.project_id == project.id, ProjectDeveloperRelationship.developer_id == developer.id, ProjectDeveloperRelationship.relationship_type == "developer", ProjectDeveloperRelationship.source_url == page.url))
+            if existing_rel:
+                continue
+            if is_seed_project and project.developer_id in (None, developer.id):
+                # High-confidence, structurally-derived link: record it as already verified
+                # instead of leaving it to sit unlinked in a manual review queue.
+                db.add(ProjectDeveloperRelationship(project_id=project.id, developer_id=developer.id, relationship_type="developer", status="verified", source_evidence=evidence, source_url=page.url, evidence_text=evidence_text[:excerpt_limit], reviewed_at=utc_now(), review_note="Auto-verified: crawl seeded from this project's official website."))
+                project.developer_id = developer.id
+                counts["relationship_candidates_created"] += 1
+            else:
+                db.add(ProjectDeveloperRelationship(project_id=project.id, developer_id=developer.id, relationship_type="developer", status="candidate", source_evidence=evidence, source_url=page.url, evidence_text=evidence_text[:excerpt_limit]))
+                counts["relationship_candidates_created"] += 1
     db.commit()
     return counts
 
